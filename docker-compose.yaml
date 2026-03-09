@@ -1,0 +1,67 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:latest
+    container_name: mongo
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: example
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - expensy-network
+
+  redis:
+    image: redis:latest
+    container_name: redis
+    ports:
+      - "6379:6379"
+    command: redis-server --requirepass someredispassword
+    volumes:
+      - redis_data:/data
+    networks:
+      - expensy-network
+
+  backend:
+    build:
+      context: ./expensy_backend
+      dockerfile: Dockerfile
+    container_name: backend
+    ports:
+      - "8706:8706"
+    environment:
+      PORT: 8706
+      DATABASE_URI: mongodb://root:example@mongodb:27017
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: someredispassword
+    depends_on:
+      - mongodb
+      - redis
+    networks:
+      - expensy-network
+
+  frontend:
+    build:
+      context: ./expensy_frontend
+      dockerfile: Dockerfile
+    container_name: frontend
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8706
+    depends_on:
+      - backend
+    networks:
+      - expensy-network
+
+volumes:
+  mongodb_data:
+  redis_data:
+
+networks:
+  expensy-network:
+    driver: bridge
