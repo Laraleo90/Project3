@@ -139,9 +139,14 @@ jobs:
           kubectl apply -f k8s/ingress.yaml
       - name: Deploy Monitoring Stack
         run: |
-            kubectl apply -f monitoring/prometheus.yaml
-            kubectl apply -f monitoring/grafana.yaml
+            kubectl apply -f monitoring/pvc2-deployment.yaml
+            kubectl apply -f monitoring/configmap2.yaml
+            kubectl apply -f monitoring/grafana-deployment.yaml
+            kubectl apply -f monitoring/grafana-service.yaml
             kubectl apply -f monitoring/node-exporter.yaml
+            kubectl apply -f monitoring/node-service.yaml
+            kubectl apply -f monitoring/prometheus-deployment.yaml
+            kubectl apply -f monitoring/prometheus-service.yaml
     
       - name: Verify Deployment
         run: |
