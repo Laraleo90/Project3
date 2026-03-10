@@ -1,0 +1,145 @@
+name: Build and Deploy to AKS
+
+on:
+  push:
+    branches: [ main, cicd ]
+  workflow_dispatch:
+
+env:
+  DOCKER_HUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+  DOCKER_HUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+  AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
+  RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP }}
+  CLUSTER_NAME: ${{ secrets.AZURE_CLUSTER_NAME }}
+
+jobs:
+  # STAGE 1: BUILD
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Build Backend
+        run: |
+          cd expensy_backend
+          npm install
+          npm run build
+
+      - name: Build Frontend
+        run: |
+          cd expensy_frontend
+          npm install
+          npm run build
+
+  # STAGE 2: TEST
+  test:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Test Backend
+        run: |
+          cd expensy_backend
+          npm install
+          npm run lint --if-present
+          npm test --if-present
+        continue-on-error: true
+
+      - name: Test Frontend
+        run: |
+          cd expensy_frontend
+          npm install
+          npm run lint --if-present
+          npm test --if-present
+        continue-on-error: true
+
+  # STAGE 3: DOCKER BUILD & PUSH
+  # docker-build-push:
+  #   runs-on: ubuntu-latest
+  #   needs: test
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v4
+
+  #     - name: Login to Docker Hub
+  #       uses: docker/login-action@v3
+  #       with:
+  #         username: ${{ secrets.DOCKERHUB_USERNAME }}
+  #         password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+  #     - name: Build and Push Backend Image
+  #       uses: docker/build-push-action@v5
+  #       with:
+  #         context: ./expensy_backend
+  #         push: true
+  #         tags: ${{ secrets.DOCKERHUB_USERNAME }}/expensy-backend:latest
+
+  #     - name: Build and Push Frontend Image
+  #       uses: docker/build-push-action@v5
+  #       with:
+  #         context: ./expensy_frontend
+  #         push: true
+  #         tags: ${{ secrets.DOCKERHUB_USERNAME }}/expensy-frontend:latest
+
+  # STAGE 4: DEPLOY TO AKS
+  deploy-aks:
+    runs-on: ubuntu-latest
+    needs: docker-build-push
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Set AKS Context
+        uses: azure/aks-set-context@v3
+        with:
+          resource-group: ${{ env.RESOURCE_GROUP }}
+          cluster-name: ${{ env.CLUSTER_NAME }}
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v3
+
+      - name: Deploy to Kubernetes
+        run: |
+          # Apply Namespace and Secrets first
+          kubectl apply -f k8s/namespace.yaml
+          kubectl apply -f k8s/configmap.yaml
+          kubectl apply -f k8s/secrets.yaml
+          
+          # Apply Databases/Infrastructure
+          kubectl apply -f k8s/mongo-service.yaml
+          kubectl apply -f k8s/mongo-deployment.yaml
+          kubectl apply -f k8s/redis-service.yaml
+          kubectl apply -f k8s/redis-deployment.yaml
+          
+          # Apply Applications
+          kubectl apply -f k8s/backend-service.yaml
+          kubectl apply -f k8s/backend-deployment.yaml
+          kubectl apply -f k8s/frontend-service.yaml
+          kubectl apply -f k8s/frontend-deployment.yaml
+          
+          # Apply Ingress
+          kubectl apply -f k8s/ingress.yaml
+
+      - name: Verify Deployment
+        run: |
+          kubectl get pods -n expensy
+          kubectl get svc -n expensy
+          kubectl get ingress -n expensy
