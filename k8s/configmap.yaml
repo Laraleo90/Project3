@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: expensy-config
+  namespace: expensy
+data:
+  PORT: "8706"
+  DATABASE_URI: mongodb://root:example@mongodb:27017/expensy?authSource=admin
+  REDIS_HOST: redis
+  REDIS_PORT: "6379"
+  NEXT_PUBLIC_API_URL: http://20.23.180.96

@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: expensy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+        - name: backend
+          image: laraleo/expensy-backend:latest
+          ports:
+            - containerPort: 8706
+          env:
+            - name: MONGO_INITDB_ROOT_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: expensy-secrets
+                  key: MONGO_INITDB_ROOT_USERNAME
+            - name: MONGO_INITDB_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: expensy-secrets
+                  key: MONGO_INITDB_ROOT_PASSWORD
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: expensy-secrets
+                  key: REDIS_PASSWORD
+            - name: PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: expensy-config
+                  key: PORT
+            - name: DATABASE_URI
+              valueFrom:
+                configMapKeyRef:
+                  name: expensy-config
+                  key: DATABASE_URI
+            - name: REDIS_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: expensy-config
+                  key: REDIS_HOST
+            - name: REDIS_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: expensy-config
+                  key: REDIS_PORT

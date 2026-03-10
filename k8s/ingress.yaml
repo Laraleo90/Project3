@@ -1,0 +1,34 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: expensy-ingress
+  namespace: expensy
+spec:
+  ingressClassName: nginx
+  rules:
+  - http:
+      paths:
+      # Backend API - /api/* routes to backend
+      - path: /api
+        pathType: Prefix
+        backend:
+          service:
+            name: backend
+            port:
+              number: 8706
+      # Backend metrics - /metrics routes to backend
+      - path: /metrics
+        pathType: Prefix
+        backend:
+          service:
+            name: backend
+            port:
+              number: 8706
+      # Frontend - catch everything else at root
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: frontend
+            port:
+              number: 3000
