@@ -36,7 +36,7 @@ jobs:
           cd expensy_frontend
           npm install
           npm run build
-
+ 
   # STAGE 2: TEST
   test:
     runs-on: ubuntu-latest
