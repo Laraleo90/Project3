@@ -137,9 +137,14 @@ jobs:
           
           # Apply Ingress
           kubectl apply -f k8s/ingress.yaml
-
+      - name: Deploy Monitoring Stack
+        run: |
+            kubectl apply -f monitoring/prometheus.yaml
+            kubectl apply -f monitoring/grafana.yaml
+            kubectl apply -f monitoring/node-exporter.yaml
+    
       - name: Verify Deployment
         run: |
           kubectl get pods -n expensy
           kubectl get svc -n expensy
-          kubectl get ingress -n expensy
+          kubectl get ingress -n --all-namespaces
