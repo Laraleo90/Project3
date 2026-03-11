@@ -42,7 +42,7 @@ spec:
             - name: DATABASE_URI
               valueFrom:
                 configMapKeyRef:
-                  name: expensy-config
+                  name: expensy-secrets
                   key: DATABASE_URI
             - name: REDIS_HOST
               valueFrom:
