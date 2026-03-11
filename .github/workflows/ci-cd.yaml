@@ -2,7 +2,7 @@ name: Build and Deploy to AKS
 
 on:
   push:
-    branches: [ main, cicd, monitoring ]
+    branches: [ main, cicd, monitoring,security ]
   workflow_dispatch:
 
 env:
@@ -115,6 +115,18 @@ jobs:
 
       - name: Set up kubectl
         uses: azure/setup-kubectl@v3
+      
+      - name: Setup Azure DNS and Cert-Manager
+        run: |
+          # Update Azure DNS Label
+          PUBLIC_IP_ID=$(az network public-ip list --query "[?ipAddress=='20.23.180.96'].id" -o tsv)
+          az network public-ip update --ids $PUBLIC_IP_ID --dns-name expensy-lara
+          
+          # Setup Helm and Cert-Manager
+          helm repo add jetstack https://charts.jetstack.io
+          helm repo update
+          helm upgrade --install cert-manager jetstack/cert-manager \
+            --namespace cert-manager --create-namespace --set installCRDs=true
 
       - name: Deploy to Kubernetes
         run: |
@@ -135,8 +147,12 @@ jobs:
           kubectl apply -f k8s/frontend-service.yaml
           kubectl apply -f k8s/frontend-deployment.yaml
           
-          # Apply Ingress
+          # Apply Ingress & Network Policy
           kubectl apply -f k8s/ingress.yaml
+          kubectl apply -f security/network-policy.yaml
+
+          # Apply Cert-Manager Config 
+          kubectl apply -f security/cert-manager.yaml
       - name: Deploy Monitoring Stack
         run: |
             kubectl apply -f monitoring/pvc2-deployment.yaml
@@ -148,8 +164,14 @@ jobs:
             kubectl apply -f monitoring/prometheus-deployment.yaml
             kubectl apply -f monitoring/prometheus-service.yaml
     
+      - name: Refresh Application Pods
+        run: |
+          kubectl rollout restart deployment frontend -n expensy
+          kubectl rollout restart deployment backend -n expensy
+    
       - name: Verify Deployment
         run: |
           kubectl get pods -n expensy
           kubectl get svc -n expensy
-          kubectl get ingress -n --all-namespaces
+          kubectl get ingress -n expensy
+          kubectl get certificate -n expensy

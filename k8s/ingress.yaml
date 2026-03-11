@@ -3,12 +3,22 @@ kind: Ingress
 metadata:
   name: expensy-ingress
   namespace: expensy
+  annotations:
+    # This links to the ClusterIssuer created by the script
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    # This ensures that if someone visits the URL via HTTP, they get moved to HTTPS
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
 spec:
   ingressClassName: nginx
+  tls:
+  - hosts:
+    - expensy-lara.westeurope.cloudapp.azure.com
+    secretName: expensy-tls-secret
   rules:
-  - http:
+  # --- RULE 1: The Domain Name (with SSL) ---
+  - host: expensy-lara.westeurope.cloudapp.azure.com
+    http:
       paths:
-      # Backend API - /api/* routes to backend
       - path: /api
         pathType: Prefix
         backend:
@@ -16,7 +26,6 @@ spec:
             name: backend
             port:
               number: 8706
-      # Backend metrics - /metrics routes to backend
       - path: /metrics
         pathType: Prefix
         backend:
@@ -24,7 +33,6 @@ spec:
             name: backend
             port:
               number: 8706
-      # Frontend - catch everything else at root
       - path: /
         pathType: Prefix
         backend:
@@ -32,3 +40,28 @@ spec:
             name: frontend
             port:
               number: 3000
+  # --- RULE 2: The Fallback (Keeps your IP working) ---
+  - http:
+      paths:
+      - path: /api
+        pathType: Prefix
+        backend:
+          service:
+            name: backend
+            port:
+              number: 8706
+      - path: /metrics
+        pathType: Prefix
+        backend:
+          service:
+            name: backend
+            port:
+              number: 8706
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: frontend
+            port:
+              number: 3000
+ 

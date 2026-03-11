@@ -8,4 +8,4 @@ data:
   DATABASE_URI: mongodb://root:example@mongodb:27017/expensy?authSource=admin
   REDIS_HOST: redis
   REDIS_PORT: "6379"
-  NEXT_PUBLIC_API_URL: http://20.23.180.96
+  NEXT_PUBLIC_API_URL: "https://expensy-lara.westeurope.cloudapp.azure.com"
