@@ -15,6 +15,7 @@ terraform/.terraform.lock.hcl
 *-secret.yaml
 *-secrets.yaml
 secrets/
+k8s/secrets.yaml
 
 # Node modules
 node_modules/
@@ -23,3 +24,6 @@ build/
 
 # Docker
 .dockerignore
+
+# macOS system files
+.DS_Store
