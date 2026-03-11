@@ -1,0 +1,47 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: expensy-network-policy
+  namespace: expensy
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+  
+  # INGRESS: Allow inbound traffic
+  ingress:
+    # Allow from Ingress controller (nginx)
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 3000  # Frontend
+        - protocol: TCP
+          port: 8706  # Backend
+    
+    # Allow ALL traffic between pods in expensy namespace
+    - from:
+        - podSelector: {}
+  
+  # EGRESS: Allow outbound traffic
+  egress:
+    # Allow DNS
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: UDP
+          port: 53
+    
+    # Allow ALL traffic to pods in expensy namespace
+    - to:
+        - podSelector: {}
+    
+    # Allow external HTTPS
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: TCP
+          port: 443
