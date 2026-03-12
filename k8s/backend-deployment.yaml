@@ -41,7 +41,7 @@ spec:
                   key: PORT
             - name: DATABASE_URI
               valueFrom:
-                configMapKeyRef:
+                secretKeyRef:
                   name: expensy-secrets
                   key: DATABASE_URI
             - name: REDIS_HOST
