@@ -141,6 +141,7 @@ jobs:
             --from-literal=MONGO_INITDB_ROOT_USERNAME=${{ secrets.MONGO_INITDB_ROOT_USERNAME }} \
             --from-literal=MONGO_INITDB_ROOT_PASSWORD=${{ secrets.MONGO_INITDB_ROOT_PASSWORD }} \
             --from-literal=REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }} \
+            --from-literal=DATABASE_URI=${{ secrets.DATABASE_URI }} \
             --dry-run=client -o yaml | kubectl apply -f -
           
           # Apply Databases/Infrastructure
